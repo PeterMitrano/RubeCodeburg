@@ -1,23 +1,15 @@
-
-from __future__ import print_function
-import httplib2
-import os
 import base64
-import webbrowser
+import os
 import time
+import webbrowser
 
-from twilio.rest import Client
+import httplib2
 from apiclient import discovery
-from oauth2client import client
+import email
+from oauth2client import client as Client
 from oauth2client import tools
 from oauth2client.file import Storage
-from email.MIMEText import MIMEText
-
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
+from twilio.rest import client
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/gmail-python-quickstart.json
@@ -46,10 +38,11 @@ def get_credentials():
         flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
-        else: # Needed only for compatibility with Python 2.6
+        else:  # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
         print('Storing credentials to ' + credential_path)
     return credentials
+
 
 def create_message(sender, to, subject, message_text):
     """Create a message for an email.
@@ -61,11 +54,12 @@ def create_message(sender, to, subject, message_text):
     Returns:
     An object containing a base64url encoded email object.
     """
-    message = MIMEText(message_text)
+    message = email.mime.text.MIMEText(message_text)
     message['to'] = to
     message['from'] = sender
     message['subject'] = subject
     return {'raw': base64.urlsafe_b64encode(message.as_string())}
+
 
 def send_message(service, user_id, message):
     """Send an email message.
@@ -84,6 +78,7 @@ def send_message(service, user_id, message):
     except Exception as error:
         print('An error occurred: %s' % error)
 
+
 def twilio():
     # Your Account Sid and Auth Token from twilio.com/user/account
     account_sid = os.environ['account_sid']
@@ -96,7 +91,8 @@ def twilio():
     fax_url = 'https://s3-external-1.amazonaws.com' + faxes[0].media_url[7:]
     webbrowser.open_new_tab(fax_url)
 
-def main(word='hot dog'):
+
+def funfax(word='hot dog'):
     """Shows basic usage of the Gmail API.
 
     Creates a Gmail API service object and outputs a list of label names
@@ -112,4 +108,4 @@ def main(word='hot dog'):
 
 
 if __name__ == '__main__':
-    main('hot dog')
+    funfax('hot dog')

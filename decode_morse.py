@@ -2,11 +2,16 @@
 import sys
 
 import argparse
+import funfax
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
 from grip import GripPipeline
+
+
+def from_morse(morse):
+    return "hello, world"
 
 
 def main():
@@ -63,6 +68,10 @@ def main():
 
     plt.plot(d)
     # plt.show()
+
+    morse = "..-"
+    text = from_morse(morse)
+    funfax.funfax(text)
 
 
 if __name__ == '__main__':
