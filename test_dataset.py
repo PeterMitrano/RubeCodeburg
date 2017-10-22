@@ -18,6 +18,10 @@ def main():
     for frame, label in zip(dataset['frames'], dataset['labels']):
         pipeline = grip.GripPipeline()
         pipeline.process(frame)
+
+        cv2.imshow('', pipeline.blur_output)
+        cv2.waitKey(1)
+
         blobs = pipeline.find_blobs_output
 
         if len(blobs) > 0:

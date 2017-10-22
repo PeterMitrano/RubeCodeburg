@@ -31,7 +31,7 @@ def main():
         cap = cv2.VideoCapture(0)
 
     d = []
-    fps = 20
+    fps = 30
     on_frames = 0
     off_frames = 0
     really_off_frames = 0
@@ -49,7 +49,7 @@ def main():
     if args.save:
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         print("Saving to file {}".format(args.save))
-        out = cv2.VideoWriter(args.save, fourcc, 20.0, (640, 480))
+        out = cv2.VideoWriter(args.save, fourcc, fps, (640, 480))
 
     while True:
         ret, frame = cap.read()

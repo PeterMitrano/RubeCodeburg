@@ -11,11 +11,14 @@ def main():
     parser.add_argument("--outfile", "-o", help="output file (*.npz)", required=True)
     args = parser.parse_args()
 
-    n = 200
+    n = 2000
     IMG_W = 96
     IMG_H = 72
-    frames = np.ndarray(shape=(n, IMG_H, IMG_W, 3), dtype=np.float32)
-    labels = np.ndarray(shape=(n, 2), dtype=np.float32)
+    frames = np.ndarray(shape=(n, IMG_H, IMG_W, 3), dtype=np.uint8)
+    labels = np.ndarray(shape=(n, 2), dtype=np.uint8)
+
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter("tmp.avi", fourcc, 30.0, (IMG_W, IMG_H))
 
     cap = cv2.VideoCapture(0)
     i = 0
@@ -28,6 +31,8 @@ def main():
 
         label = [0, 1]
         frame_scaled = cv2.resize(frame, (IMG_W, IMG_H))
+
+        out.write(frame_scaled)
         frames[i] = frame_scaled
         labels[i] = label
 
@@ -49,6 +54,7 @@ def main():
             return 1
 
         label = [1, 0]
+        out.write(frame_scaled)
         frame_scaled = cv2.resize(frame, (IMG_W, IMG_H))
         cv2.imshow("scaled", frame_scaled)
         frames[i] = frame_scaled
@@ -64,6 +70,7 @@ def main():
 
     cap.release()
 
+    print(frames[0])
     np.savez(open(args.outfile, 'wb'), frames=frames, labels=labels)
 
 
