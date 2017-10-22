@@ -1,12 +1,13 @@
 
 # coding: utf-8
 
-# In[128]:
+# In[131]:
 
 import cv2
 import numpy
 import matplotlib.pyplot as plt
 from google.cloud import vision
+from pygame import mixer
 import io
 from boto3 import Session
 
@@ -28,7 +29,7 @@ plt.imshow(frame)
 plt.show()
 
 
-# In[117]:
+# In[134]:
 
 client = vision.ImageAnnotatorClient()
 
@@ -90,13 +91,29 @@ response = polly.synthesize_speech(Text=text_to_say, VoiceId="Matthew", OutputFo
 data = response['AudioStream'].read()
 
 
-# In[127]:
+# In[129]:
 
 import copy
 data = copy.copy(data)
-out_path = o
+out_path = "out.mp3"
 out_f = open(out_path, 'wb')
 out_f.write(data)
 out_f.close()
-show_playable_audio()
+
+
+# In[130]:
+
+show_playable_audio(out_path)
+
+
+# In[132]:
+
+mixer.init()
+mixer.music.load(out_path)
+mixer.music.play()
+
+
+# In[ ]:
+
+
 
