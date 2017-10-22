@@ -11,7 +11,7 @@ def main():
     parser.add_argument("--outfile", "-o", help="output file (*.npz)", required=True)
     args = parser.parse_args()
 
-    n = 2000
+    n = 200
     IMG_W = 96
     IMG_H = 72
     frames = np.ndarray(shape=(n, IMG_H, IMG_W, 3), dtype=np.float32)
@@ -20,10 +20,6 @@ def main():
     cap = cv2.VideoCapture(0)
     i = 0
     while True:
-        i += 1
-        if i > n/2:
-            break
-
         ret, frame = cap.read()
 
         if not ret:
@@ -39,13 +35,13 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+        i += 1
+        if i > n/2:
+            break
+
     input("Turn on the flash and press enter.")
 
     while True:
-        i += 1
-        if i >= n:
-            break
-
         ret, frame = cap.read()
 
         if not ret:
@@ -60,6 +56,10 @@ def main():
 
         cv2.imshow("scaled", frame_scaled)
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        i += 1
+        if i >= n:
             break
 
     cap.release()
