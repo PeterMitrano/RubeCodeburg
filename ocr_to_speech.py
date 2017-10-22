@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
-import cv2
+import io
 from time import sleep
-import numpy
-import matplotlib.pyplot as plt
+
+import cv2
+from boto3 import Session
 from google.cloud import vision
 from pygame import mixer
-import io
-from boto3 import Session
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--demo", '-d', action="store_true", help='cheat for the demo')
+    parser.add_argument("--save", '-s', help='cheat for the demo')
 
     args = parser.parse_args()
 
@@ -28,15 +29,22 @@ def main():
 
     cap.release()
 
+    if args.save:
+        cv2.imwrite(args.save, frame)
+        return
+
     client = vision.ImageAnnotatorClient()
 
-    with io.open('./test.jpg', 'rb') as image_file:
-            content = image_file.read()
-
     if args.demo:
-        image = vision.types.Image(content=content)
+        demo_img = "ocr.jpg"
+        with io.open(demo_img, 'rb') as image_file:
+            image = image_file.read()
     else:
-        image = vision.types.Image(content=frame.tobytes())
+        saved_frame_path = "/tmp/frame.jpg"
+        cv2.imwrite(saved_frame_path, frame)
+        image = io.open(saved_frame_path, 'rb').read()
+
+    image = vision.types.Image(content=image)
 
     response = client.text_detection(image=image)
     texts = response.text_annotations
