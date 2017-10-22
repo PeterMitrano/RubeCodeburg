@@ -194,14 +194,8 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
     try {
       String cameraId = getFrontFacingCameraId(cameraManager);
       if (cameraId != null) {
-        Log.e(getClass().toString(), cameraId);
-        cameraManager.setTorchMode(cameraId, true);
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        cameraManager.setTorchMode(cameraId, false);
+        MorseEmitter emitter = new MorseEmitter(cameraManager, cameraId, morse);
+        emitter.execute();
       }
     } catch (CameraAccessException e) {
       e.printStackTrace();
@@ -260,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
     // Start listening to voices
     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
         == PackageManager.PERMISSION_GRANTED) {
-      startVoiceRecorder();
+//      startVoiceRecorder();
     } else if (ActivityCompat.shouldShowRequestPermissionRationale(this,
         Manifest.permission.RECORD_AUDIO)) {
       showPermissionMessageDialog();
@@ -297,7 +291,7 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
     if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
       if (permissions.length == 1 && grantResults.length == 1
           && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        startVoiceRecorder();
+//        startVoiceRecorder();
       } else {
         showPermissionMessageDialog();
       }
@@ -365,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
         Log.e(getClass().toString(), "starting recording");
         // TODO: renable me
         // startVoiceRecorder();
-        flashMorse(".- ...");
+        flashMorse(".. -- .-");
       }
   }
 
