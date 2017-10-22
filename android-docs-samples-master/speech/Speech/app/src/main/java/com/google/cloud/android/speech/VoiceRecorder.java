@@ -193,13 +193,11 @@ public class VoiceRecorder {
             mLastVoiceHeardMillis = now;
             if (now - mVoiceStartedMillis > MAX_SPEECH_LENGTH_MILLIS) {
               end();
-              return;
             }
           } else if (mLastVoiceHeardMillis != Long.MAX_VALUE) {
             mCallback.onVoice(mBuffer, size);
             if (now - mLastVoiceHeardMillis > SPEECH_TIMEOUT_MILLIS) {
               end();
-              return;
             }
           }
         }

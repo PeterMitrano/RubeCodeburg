@@ -8,8 +8,9 @@
  - [ ] Blink out morse code on it's screen
  - [ ] Computer A watches computer B's screen and converts to morse code
  - [ ] Converts morse back to text
- - [ ] Sends text to fax with twillion
- - [ ] Fax server converts to email
+ - [ ] Sends text to as email to FaxBurner
+ - [ ] FaxBurner directs the "fax" to twilio
+ - [ ] twilio sends the sms to our real phone with the final answer!
 
 
 http://api.funtranslations.com/translate/morse.json?text=T

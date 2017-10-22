@@ -32,12 +32,21 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 
 
@@ -83,6 +92,21 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
     }
 
   };
+  private final ServiceConnection mServiceConnection = new ServiceConnection() {
+
+    @Override
+    public void onServiceConnected(ComponentName componentName, IBinder binder) {
+      mSpeechService = SpeechService.from(binder);
+      mSpeechService.addListener(mSpeechServiceListener);
+      mStatus.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName componentName) {
+      mSpeechService = null;
+    }
+
+  };
   private TextView mText;
   private ResultAdapter mAdapter;
   private RecyclerView mRecyclerView;
@@ -100,6 +124,10 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
                 if (isFinal) {
                   mText.setText(null);
                   mAdapter.addResult(text);
+                  // TODO: translate to french
+                  String french = convertToText(text);
+                  // TODO: convert to morse
+                  convertToMorse(french);
                   mRecyclerView.smoothScrollToPosition(0);
                 } else {
                   mText.setText(text);
@@ -109,21 +137,37 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
           }
         }
       };
-  private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
-    @Override
-    public void onServiceConnected(ComponentName componentName, IBinder binder) {
-      mSpeechService = SpeechService.from(binder);
-      mSpeechService.addListener(mSpeechServiceListener);
-      mStatus.setVisibility(View.VISIBLE);
+  private void convertToMorse(String french) {
+    RequestQueue queue = Volley.newRequestQueue(this);
+    String query;
+    try {
+      query = URLEncoder.encode(french, "utf-8");
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+      return;
     }
+    String url = "http://api.funtranslations.com/translate/morse.json?text=" + query;
 
-    @Override
-    public void onServiceDisconnected(ComponentName componentName) {
-      mSpeechService = null;
-    }
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+        new Response.Listener<String>() {
+          @Override
+          public void onResponse(String response) {
+            // TODO: blink the camera flash
+          }
+        }, new Response.ErrorListener() {
+      @Override
+      public void onErrorResponse(VolleyError error) {
+        error.printStackTrace();
+        Log.e(getClass().toString(), error.toString());
+      }
+    });
+    queue.add(stringRequest);
+  }
 
-  };
+  private String convertToText(String text) {
+    return text;
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
