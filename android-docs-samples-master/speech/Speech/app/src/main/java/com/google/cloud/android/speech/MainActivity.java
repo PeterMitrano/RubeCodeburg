@@ -158,7 +158,9 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
       e.printStackTrace();
       return;
     }
-    String url = "http://api.funtranslations.com/translate/morse.json?text=" + query;
+    // TODO: renable me
+    // String url = "http://api.funtranslations.com/translate/morse.json?text=" + query;
+    String url = "http://api.funtranslations.com/translate/morse.json?text=T";
 
     JsonObjectRequest jsObjRequest = new JsonObjectRequest
         (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
@@ -181,7 +183,9 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
             error.printStackTrace();
           }
         });
-    queue.add(jsObjRequest);
+    // TODO: renable me
+    // queue.add(jsObjRequest);
+    flashMorse(".- - ...");
   }
 
   private void flashMorse(String morse) {
@@ -192,6 +196,12 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
       if (cameraId != null) {
         Log.e(getClass().toString(), cameraId);
         cameraManager.setTorchMode(cameraId, true);
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        cameraManager.setTorchMode(cameraId, false);
       }
     } catch (CameraAccessException e) {
       e.printStackTrace();
@@ -201,13 +211,14 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
   String getFrontFacingCameraId(CameraManager cManager) throws CameraAccessException {
     for(final String cameraId : cManager.getCameraIdList()){
       CameraCharacteristics characteristics = cManager.getCameraCharacteristics(cameraId);
-      int cOrientation = characteristics.get(CameraCharacteristics.LENS_FACING);
-      if(cOrientation == CameraCharacteristics.LENS_FACING_FRONT) {
-        return cameraId;
-      }
+      Log.e(getClass().toString(), characteristics.toString());
+//      int cOrientation = characteristics.get(CameraCharacteristics.);
+//      if(cOrientation == CameraCharacteristics.LENS_FACING_FRONT) {
+//        return cameraId;
+//      }
     }
 
-    return null;
+    return "0";
   }
 
   private String convertToText(String text) {
@@ -352,7 +363,9 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
   public void onClick(View v) {
       if (v.getId() == R.id.start_recording) {
         Log.e(getClass().toString(), "starting recording");
-        startVoiceRecorder();
+        // TODO: renable me
+        // startVoiceRecorder();
+        flashMorse(".- ...");
       }
   }
 
