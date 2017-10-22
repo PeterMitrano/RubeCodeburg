@@ -1,48 +1,64 @@
 #!/usr/bin/env python3
-import matplotlib.pyplot as plt
-import cv2
-import numpy as np
 import sys
+
+import argparse
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+from grip import GripPipeline
 
 
 def main():
-    cap = cv2.VideoCapture(0)
-    means = []
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', '-v', action="store_true", help="show windows with input and outputs")
+    parser.add_argument('--save', '-s', help="write to output.avi")
+    parser.add_argument('--vid', help="input video for testing")
+
+    args = parser.parse_args()
+
+    pipeline = GripPipeline()
+
+    if args.vid:
+        cap = cv2.VideoCapture(args.vid)
+    else:
+        cap = cv2.VideoCapture(0)
+
+    d = []
+
+    if args.save:
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        print("Saving to file {}".format(args.save))
+        out = cv2.VideoWriter(args.save, fourcc, 20.0, (640, 480))
 
     while True:
         ret, frame = cap.read()
 
         if ret:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            channels = cv2.split(hsv)
-            filtered = cv2.inRange(channels[2], 240, 255)
+            pipeline.process(frame)
 
-            mean = np.mean(filtered)
-            means.append(mean)
+            if len(pipeline.find_blobs_output) > 0:
+                frame = cv2.drawKeypoints(frame, pipeline.find_blobs_output, frame)
+                print("DETECTED")
+                d.append(1)
+            else:
+                d.append(0)
 
-            # Set up the detector with default parameters.
-            detector = cv2.SimpleBlobDetector()
+            if args.verbose:
+                cv2.imshow('original', frame)
 
-            # Detect blobs.
-            keypoints = detector.detect(cv2.ORB, image=filtered)
+            if args.save:
+                out.write(frame)
 
-            # Draw detected blobs as red circles.
-            # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
-            im_with_keypoints = cv2.drawKeypoints(filtered, keypoints, np.array([]), (0, 0, 255),
-                                                  cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-            cv2.imshow('frame', im_with_keypoints)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            elif cv2.waitKey(1) & 0xFF == ord('s'):
-                means.clear()
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     cap.release()
+    if args.save:
+        out.release()
     cv2.destroyAllWindows()
 
-    plt.plot(means)
-    plt.title("mean brightness")
+    plt.plot(d)
     plt.show()
 
 

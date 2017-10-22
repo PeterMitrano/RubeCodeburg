@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
                   mText.setText(null);
                   mAdapter.addResult(text);
                   // TODO: translate to french
-                  String french = convertToText(text);
+                  String french = convertToFrench(text);
                   // TODO: convert to morse
                   convertToMorse(french);
                   mRecyclerView.smoothScrollToPosition(0);
@@ -215,7 +215,8 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
     return "0";
   }
 
-  private String convertToText(String text) {
+  private String convertToFrench(String text) {
+    // https://translation.googleapis.com/language/translate/v2?key=AIzaSyCVXtLKgIoKeVnvdijJ6Wxahc74I5qBCdw&q=hello&target=fr
     return text;
   }
 
