@@ -23,7 +23,6 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -74,7 +73,6 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
   private int mColorNotHearing;
   // View references
   private TextView mStatus;
-  private Button startButton;
   private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
 
     @Override
@@ -101,6 +99,36 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
     }
 
   };
+  private Button startButton;
+  private TextView mText;
+  private ResultAdapter mAdapter;
+  private RecyclerView mRecyclerView;
+  private final SpeechService.Listener mSpeechServiceListener =
+      new SpeechService.Listener() {
+        @Override
+        public void onSpeechRecognized(final String text, final boolean isFinal) {
+          if (isFinal) {
+            mVoiceRecorder.dismiss();
+            stopVoiceRecorder();
+          }
+          if (mText != null && !TextUtils.isEmpty(text)) {
+            runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                if (isFinal) {
+                  mText.setText(null);
+                  mAdapter.addResult(text);
+                  // TODO: translate to french
+                  convertToFrenchAndFlashMorse(text);
+                  mRecyclerView.smoothScrollToPosition(0);
+                } else {
+                  mText.setText(text);
+                }
+              }
+            });
+          }
+        }
+      };
   private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
     @Override
@@ -116,38 +144,45 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
     }
 
   };
-  private TextView mText;
-  private ResultAdapter mAdapter;
-  private RecyclerView mRecyclerView;
-  private final SpeechService.Listener mSpeechServiceListener =
-      new SpeechService.Listener() {
-        @Override
-        public void onSpeechRecognized(final String text, final boolean isFinal) {
-          if (isFinal) {
-            mVoiceRecorder.dismiss();
-            stopVoiceRecorder();
-            Log.e(getClass().toString(), "STOPPING");
+
+  private void convertToFrenchAndFlashMorse(String text) {
+    RequestQueue queue = Volley.newRequestQueue(this);
+    String query;
+    try {
+      query = URLEncoder.encode(text, "utf-8");
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+      return;
+    }
+
+    String url =
+        "https://translation.googleapis.com/language/translate/v2?key=AIzaSyCVXtLKgIoKeVnvdijJ6Wxahc74I5qBCdw&q="
+            + query + "&target=fr";
+
+    JsonObjectRequest jsObjRequest = new JsonObjectRequest
+        (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+          @Override
+          public void onResponse(JSONObject response) {
+            try {
+              JSONObject data = response.getJSONObject("data");
+              JSONObject translation = data.getJSONArray("translations").getJSONObject(0);
+              String french = translation.getString("translatedText");
+              Log.e(getClass().toString(), french);
+              convertToMorse(french);
+            } catch (JSONException e) {
+              e.printStackTrace();
+            }
           }
-          if (mText != null && !TextUtils.isEmpty(text)) {
-            runOnUiThread(new Runnable() {
-              @Override
-              public void run() {
-                if (isFinal) {
-                  mText.setText(null);
-                  mAdapter.addResult(text);
-                  // TODO: translate to french
-                  String french = convertToFrench(text);
-                  // TODO: convert to morse
-                  convertToMorse(french);
-                  mRecyclerView.smoothScrollToPosition(0);
-                } else {
-                  mText.setText(text);
-                }
-              }
-            });
+        }, new Response.ErrorListener() {
+
+          @Override
+          public void onErrorResponse(VolleyError error) {
+            error.printStackTrace();
           }
-        }
-      };
+        });
+    queue.add(jsObjRequest);
+  }
 
   private void convertToMorse(String french) {
     RequestQueue queue = Volley.newRequestQueue(this);
@@ -158,9 +193,8 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
       e.printStackTrace();
       return;
     }
-    // TODO: renable me
-    // String url = "http://api.funtranslations.com/translate/morse.json?text=" + query;
-    String url = "http://api.funtranslations.com/translate/morse.json?text=T";
+
+    String url = "http://api.funtranslations.com/translate/morse.json?text=" + query;
 
     JsonObjectRequest jsObjRequest = new JsonObjectRequest
         (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
@@ -170,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
             try {
               JSONObject contents = response.getJSONObject("contents");
               String morse = contents.getString("translated");
+              Log.e(getClass().toString(), morse);
               flashMorse(morse);
 
             } catch (JSONException e) {
@@ -184,13 +219,13 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
           }
         });
     // TODO: renable me
-    // queue.add(jsObjRequest);
-    flashMorse(".- - ...");
+    queue.add(jsObjRequest);
   }
 
   private void flashMorse(String morse) {
     //TODO: send morse via camera flash
-    CameraManager cameraManager = (CameraManager) getApplicationContext().getSystemService(CAMERA_SERVICE);
+    CameraManager cameraManager = (CameraManager) getApplicationContext()
+        .getSystemService(CAMERA_SERVICE);
     try {
       String cameraId = getFrontFacingCameraId(cameraManager);
       if (cameraId != null) {
@@ -203,21 +238,16 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
   }
 
   String getFrontFacingCameraId(CameraManager cManager) throws CameraAccessException {
-    for(final String cameraId : cManager.getCameraIdList()){
-      CameraCharacteristics characteristics = cManager.getCameraCharacteristics(cameraId);
-      Log.e(getClass().toString(), characteristics.toString());
+//    for(final String cameraId : cManager.getCameraIdList()){
+//      CameraCharacteristics characteristics = cManager.getCameraCharacteristics(cameraId);
+//      Log.e(getClass().toString(), characteristics.toString());
 //      int cOrientation = characteristics.get(CameraCharacteristics.);
 //      if(cOrientation == CameraCharacteristics.LENS_FACING_FRONT) {
 //        return cameraId;
 //      }
-    }
+//    }
 
     return "0";
-  }
-
-  private String convertToFrench(String text) {
-    // https://translation.googleapis.com/language/translate/v2?key=AIzaSyCVXtLKgIoKeVnvdijJ6Wxahc74I5qBCdw&q=hello&target=fr
-    return text;
   }
 
   @Override
@@ -356,12 +386,10 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
 
   @Override
   public void onClick(View v) {
-      if (v.getId() == R.id.start_recording) {
-        Log.e(getClass().toString(), "starting recording");
-        // TODO: renable me
-        // startVoiceRecorder();
-        flashMorse(".. -- .-");
-      }
+    if (v.getId() == R.id.start_recording) {
+      Log.e(getClass().toString(), "starting recording");
+      startVoiceRecorder();
+    }
   }
 
   private static class ViewHolder extends RecyclerView.ViewHolder {

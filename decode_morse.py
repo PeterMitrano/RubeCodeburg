@@ -38,8 +38,9 @@ def main():
             pipeline.process(frame)
 
             if len(pipeline.find_blobs_output) > 0:
-                frame = cv2.drawKeypoints(frame, pipeline.find_blobs_output, frame)
-                print("DETECTED")
+                frame_with_keypoints = cv2.drawKeypoints(pipeline.hsv_threshold_output, pipeline.find_blobs_output, frame)
+                print(pipeline.find_blobs_output)
+                cv2.imshow('keypoints', frame_with_keypoints)
                 d.append(1)
             else:
                 d.append(0)
@@ -50,7 +51,9 @@ def main():
             if args.save:
                 out.write(frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        else:
             break
 
     cap.release()
@@ -59,7 +62,7 @@ def main():
     cv2.destroyAllWindows()
 
     plt.plot(d)
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':
