@@ -12,21 +12,21 @@ class GripPipeline:
         """initializes all values to presets or None if need to be set
         """
 
-        self.__blur_type = BlurType.Box_Blur
-        self.__blur_radius = 75.67567567567566
+        self.__hsl_threshold_hue = [58.27338129496402, 180.0]
+        self.__hsl_threshold_saturation = [71.08812949640287, 255.0]
+        self.__hsl_threshold_luminance = [144.46942446043167, 255.0]
+
+        self.hsl_threshold_output = None
+
+        self.__blur_input = self.hsl_threshold_output
+        self.__blur_type = BlurType.Median_Filter
+        self.__blur_radius = 25.225225225225223
 
         self.blur_output = None
 
-        self.__hsv_threshold_input = self.blur_output
-        self.__hsv_threshold_hue = [77.6978417266187, 180.0]
-        self.__hsv_threshold_saturation = [0.0, 235.51782682512734]
-        self.__hsv_threshold_value = [174.28057553956833, 255.0]
-
-        self.hsv_threshold_output = None
-
-        self.__find_blobs_input = self.hsv_threshold_output
+        self.__find_blobs_input = self.blur_output
         self.__find_blobs_min_area = 1000.0
-        self.__find_blobs_circularity = [0.24280575539568344, 1.0]
+        self.__find_blobs_circularity = [0.29676258992805754, 1.0]
         self.__find_blobs_dark_blobs = False
 
         self.find_blobs_output = None
@@ -36,18 +36,32 @@ class GripPipeline:
         """
         Runs the pipeline and sets all outputs to new values.
         """
+        # Step HSL_Threshold0:
+        self.__hsl_threshold_input = source0
+        (self.hsl_threshold_output) = self.__hsl_threshold(self.__hsl_threshold_input, self.__hsl_threshold_hue, self.__hsl_threshold_saturation, self.__hsl_threshold_luminance)
+
         # Step Blur0:
-        self.__blur_input = source0
+        self.__blur_input = self.hsl_threshold_output
         (self.blur_output) = self.__blur(self.__blur_input, self.__blur_type, self.__blur_radius)
 
-        # Step HSV_Threshold0:
-        self.__hsv_threshold_input = self.blur_output
-        (self.hsv_threshold_output) = self.__hsv_threshold(self.__hsv_threshold_input, self.__hsv_threshold_hue, self.__hsv_threshold_saturation, self.__hsv_threshold_value)
-
         # Step Find_Blobs0:
-        self.__find_blobs_input = self.hsv_threshold_output
+        self.__find_blobs_input = self.blur_output
         (self.find_blobs_output) = self.__find_blobs(self.__find_blobs_input, self.__find_blobs_min_area, self.__find_blobs_circularity, self.__find_blobs_dark_blobs)
 
+
+    @staticmethod
+    def __hsl_threshold(input, hue, sat, lum):
+        """Segment an image based on hue, saturation, and luminance ranges.
+        Args:
+            input: A BGR numpy.ndarray.
+            hue: A list of two numbers the are the min and max hue.
+            sat: A list of two numbers the are the min and max saturation.
+            lum: A list of two numbers the are the min and max luminance.
+        Returns:
+            A black and white numpy.ndarray.
+        """
+        out = cv2.cvtColor(input, cv2.COLOR_BGR2HLS)
+        return cv2.inRange(out, (hue[0], lum[0], sat[0]),  (hue[1], lum[1], sat[1]))
 
     @staticmethod
     def __blur(src, type, radius):
@@ -70,20 +84,6 @@ class GripPipeline:
             return cv2.medianBlur(src, ksize)
         else:
             return cv2.bilateralFilter(src, -1, round(radius), round(radius))
-
-    @staticmethod
-    def __hsv_threshold(input, hue, sat, val):
-        """Segment an image based on hue, saturation, and value ranges.
-        Args:
-            input: A BGR numpy.ndarray.
-            hue: A list of two numbers the are the min and max hue.
-            sat: A list of two numbers the are the min and max saturation.
-            lum: A list of two numbers the are the min and max value.
-        Returns:
-            A black and white numpy.ndarray.
-        """
-        out = cv2.cvtColor(input, cv2.COLOR_BGR2HSV)
-        return cv2.inRange(out, (hue[0], sat[0], val[0]),  (hue[1], sat[1], val[1]))
 
     @staticmethod
     def __find_blobs(input, min_area, circularity, dark_blobs):

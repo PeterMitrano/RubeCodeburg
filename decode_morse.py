@@ -6,6 +6,7 @@ import funfax
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from time import sleep
 
 from grip import GripPipeline
 
@@ -30,6 +31,20 @@ def main():
         cap = cv2.VideoCapture(0)
 
     d = []
+    fps = 20
+    on_frames = 0
+    off_frames = 0
+    really_off_frames = 0
+    on_thresh = fps * 0.05
+    dot_thresh = fps * 0.100
+    dash_thresh = fps * 0.400
+    space_thresh = fps * 0.900
+    char_gap_thresh = fps * 0.100
+    char_done = False
+    dot_done = False
+    dash_done = False
+    space_done = False
+    morse = ""
 
     if args.save:
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -40,24 +55,37 @@ def main():
         ret, frame = cap.read()
 
         if ret:
-            pipeline.process(frame)
-
-            if len(pipeline.find_blobs_output) > 0:
-                frame_with_keypoints = cv2.drawKeypoints(pipeline.hsv_threshold_output, pipeline.find_blobs_output, frame)
-                print(pipeline.find_blobs_output)
-                cv2.imshow('keypoints', frame_with_keypoints)
-                d.append(1)
-            else:
-                d.append(0)
-
             if args.verbose:
                 cv2.imshow('original', frame)
 
-            if args.save:
-                out.write(frame)
-
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+            pipeline.process(frame)
+            if len(pipeline.find_blobs_output) > 0:
+                print("blob")
+                w = 20
+                kp = pipeline.find_blobs_output[0]
+                if w < kp.pt[0] < 480 - w and w < kp.pt[1] < 640 - w:
+                    d.append(1)
+                    on_frames += 1
+            else:
+                off_frames += 1
+                if off_frames > char_gap_thresh:
+                    really_off_frames = off_frames
+                    on_frames = 0
+
+                if really_off_frames > char_gap_thresh:
+                    if on_frames > dash_thresh:
+                        morse += "-"
+                        print("-")
+                    elif on_frames > dot_thresh:
+                        morse += "."
+                        print(".")
+                d.append(0)
+
+            if args.save:
+                out.write(frame)
         else:
             break
 
@@ -66,12 +94,12 @@ def main():
         out.release()
     cv2.destroyAllWindows()
 
+    print(morse)
     plt.plot(d)
-    # plt.show()
+    plt.show()
 
-    morse = "..-"
     text = from_morse(morse)
-    funfax.funfax(text)
+    # funfax.funfax(text)
 
 
 if __name__ == '__main__':

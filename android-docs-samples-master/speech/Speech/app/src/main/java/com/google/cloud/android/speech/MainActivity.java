@@ -219,7 +219,8 @@ public class MainActivity extends AppCompatActivity implements Listener, OnClick
           }
         });
     // TODO: renable me
-    queue.add(jsObjRequest);
+//    queue.add(jsObjRequest);
+    flashMorse(".... --- -     -.. --- --. ");
   }
 
   private void flashMorse(String morse) {

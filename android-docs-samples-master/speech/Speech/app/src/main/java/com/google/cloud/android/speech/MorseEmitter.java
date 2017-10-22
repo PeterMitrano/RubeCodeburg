@@ -7,9 +7,9 @@ import android.os.AsyncTask;
 public class MorseEmitter extends AsyncTask<Void, Void, Void> {
 
   private static final long DOT_DELAY = 200;
-  private static final long DASH_DELAY = 500;
-  private static final long SPACE_DELAY = 1000;
-  private static final long CHAR_DELAY = 100;
+  private static final long DASH_DELAY = 600;
+  private static final long SPACE_DELAY = 800;
+  private static final long CHAR_DELAY = 200;
   private final CameraManager cameraManager;
   private final String cameraId;
   private final String morse;
