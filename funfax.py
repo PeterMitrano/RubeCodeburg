@@ -5,11 +5,11 @@ import webbrowser
 
 import httplib2
 from apiclient import discovery
-import email
+from email.mime.text import MIMEText
 from oauth2client import client as Client
 from oauth2client import tools
 from oauth2client.file import Storage
-from twilio.rest import client
+from twilio.rest import Client
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/gmail-python-quickstart.json
@@ -54,12 +54,13 @@ def create_message(sender, to, subject, message_text):
     Returns:
     An object containing a base64url encoded email object.
     """
-    message = email.mime.text.MIMEText(message_text)
+    message = MIMEText(message_text)
     message['to'] = to
     message['from'] = sender
     message['subject'] = subject
-    return {'raw': base64.urlsafe_b64encode(message.as_string())}
-
+    raw = base64.urlsafe_b64encode(message.as_bytes())
+    raw = raw.decode()
+    return {'raw': raw}
 
 def send_message(service, user_id, message):
     """Send an email message.
@@ -92,15 +93,15 @@ def twilio():
     webbrowser.open_new_tab(fax_url)
 
 
-def funfax(word='hot dog'):
+def funfax(word='hot diggity dog'):
     """Shows basic usage of the Gmail API.
 
     Creates a Gmail API service object and outputs a list of label names
     of the user's Gmail account.
     """
     credentials = get_credentials()
-    http = credentials.authorize(httplib2.Http())
-    service = discovery.build('gmail', 'v1', http=http)
+    http_connect = credentials.authorize(httplib2.Http())
+    service = discovery.build('gmail', 'v1', http=http_connect)
     message = create_message('athenakan@college.harvard.edu', '14433399041@efaxsend.com', 'hello', word)
     send_message(service, 'athenakan@college.harvard.edu', message)
     time.sleep(80)
@@ -108,4 +109,4 @@ def funfax(word='hot dog'):
 
 
 if __name__ == '__main__':
-    funfax('hot dog')
+    funfax('hot diggity dog')
