@@ -22,6 +22,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -37,20 +40,25 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.cloud.android.speech.MessageDialogFragment.Listener;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
-public class MainActivity extends AppCompatActivity implements MessageDialogFragment.Listener {
+public class MainActivity extends AppCompatActivity implements Listener, OnClickListener {
 
   private static final String FRAGMENT_MESSAGE_DIALOG = "message_dialog";
 
@@ -66,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
   private int mColorNotHearing;
   // View references
   private TextView mStatus;
+  private Button startButton;
   private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
 
     @Override
@@ -116,6 +125,8 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
         public void onSpeechRecognized(final String text, final boolean isFinal) {
           if (isFinal) {
             mVoiceRecorder.dismiss();
+            stopVoiceRecorder();
+            Log.e(getClass().toString(), "STOPPING");
           }
           if (mText != null && !TextUtils.isEmpty(text)) {
             runOnUiThread(new Runnable() {
@@ -149,20 +160,54 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
     }
     String url = "http://api.funtranslations.com/translate/morse.json?text=" + query;
 
-    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-        new Response.Listener<String>() {
+    JsonObjectRequest jsObjRequest = new JsonObjectRequest
+        (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
           @Override
-          public void onResponse(String response) {
-            // TODO: blink the camera flash
+          public void onResponse(JSONObject response) {
+            try {
+              JSONObject contents = response.getJSONObject("contents");
+              String morse = contents.getString("translated");
+              flashMorse(morse);
+
+            } catch (JSONException e) {
+              e.printStackTrace();
+            }
           }
         }, new Response.ErrorListener() {
-      @Override
-      public void onErrorResponse(VolleyError error) {
-        error.printStackTrace();
-        Log.e(getClass().toString(), error.toString());
+
+          @Override
+          public void onErrorResponse(VolleyError error) {
+            error.printStackTrace();
+          }
+        });
+    queue.add(jsObjRequest);
+  }
+
+  private void flashMorse(String morse) {
+    //TODO: send morse via camera flash
+    CameraManager cameraManager = (CameraManager) getApplicationContext().getSystemService(CAMERA_SERVICE);
+    try {
+      String cameraId = getFrontFacingCameraId(cameraManager);
+      if (cameraId != null) {
+        Log.e(getClass().toString(), cameraId);
+        cameraManager.setTorchMode(cameraId, true);
       }
-    });
-    queue.add(stringRequest);
+    } catch (CameraAccessException e) {
+      e.printStackTrace();
+    }
+  }
+
+  String getFrontFacingCameraId(CameraManager cManager) throws CameraAccessException {
+    for(final String cameraId : cManager.getCameraIdList()){
+      CameraCharacteristics characteristics = cManager.getCameraCharacteristics(cameraId);
+      int cOrientation = characteristics.get(CameraCharacteristics.LENS_FACING);
+      if(cOrientation == CameraCharacteristics.LENS_FACING_FRONT) {
+        return cameraId;
+      }
+    }
+
+    return null;
   }
 
   private String convertToText(String text) {
@@ -189,6 +234,9 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
         savedInstanceState.getStringArrayList(STATE_RESULTS);
     mAdapter = new ResultAdapter(results);
     mRecyclerView.setAdapter(mAdapter);
+
+    startButton = (Button) findViewById(R.id.start_recording);
+    startButton.setOnClickListener(this);
   }
 
   @Override
@@ -298,6 +346,14 @@ public class MainActivity extends AppCompatActivity implements MessageDialogFrag
   public void onMessageDialogDismissed() {
     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO},
         REQUEST_RECORD_AUDIO_PERMISSION);
+  }
+
+  @Override
+  public void onClick(View v) {
+      if (v.getId() == R.id.start_recording) {
+        Log.e(getClass().toString(), "starting recording");
+        startVoiceRecorder();
+      }
   }
 
   private static class ViewHolder extends RecyclerView.ViewHolder {

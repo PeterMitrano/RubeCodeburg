@@ -37,6 +37,13 @@
             android:paddingLeft="32dp"
             android:paddingRight="32dp"/>
 
+        <Button
+          android:id="@+id/start_recording"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:layout_gravity="center"
+          android:text="@string/start_recording" />
         <include layout="@layout/item_result"/>
 
     </android.support.design.widget.AppBarLayout>
